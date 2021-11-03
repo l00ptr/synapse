@@ -139,6 +139,9 @@ class DeviceInboxWorkerStore(SQLBaseStore):
         Returns:
             A tuple containing the following:
                 * A list of to-device messages
+                * The stream token that to-device messages were processed up to. The calling
+                  function can check this value against `to_stream_token` to see if we hit
+                  the given limit when fetching messages.
         """
         # Bail out if none of these users have any messages
         for user_id in user_ids:
@@ -193,8 +196,10 @@ class DeviceInboxWorkerStore(SQLBaseStore):
                 ).append(message_dict)
                 total_messages_processed += 1
 
-            # This is needed (REVIEW: I think) as you can have multiple rows for a
-            # single to-device message (due to multiple recipients).
+            # If we don't end up hitting the limit, we still want to return the equivalent
+            # value of `to_stream_token` to the calling function. This is needed as we'll
+            # be processing up to `to_stream_token`, without necessarily fetching a message
+            # with a stream token of `to_stream_token`.
             if total_messages_processed < limit:
                 stream_pos = to_stream_token
 
@@ -251,8 +256,14 @@ class DeviceInboxWorkerStore(SQLBaseStore):
             for row in txn:
                 stream_pos = row[0]
                 messages.append(db_to_json(row[1]))
+
+            # If we don't end up hitting the limit, we still want to return the equivalent
+            # value of `to_stream_token` to the calling function. This is needed as we'll
+            # be processing up to `to_stream_token`, without necessarily fetching a message
+            # with a stream token of `to_stream_token`.
             if len(messages) < limit:
                 stream_pos = current_stream_token
+
             return messages, stream_pos
 
         return await self.db_pool.runInteraction(
