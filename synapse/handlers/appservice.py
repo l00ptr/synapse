@@ -205,14 +205,12 @@ class ApplicationServicesHandler:
         users: Collection[Union[str, UserID]],
     ) -> None:
         """
-        This is called by the notifier in the background when
-        an ephemeral event is handled by the homeserver.
+        This is called by the notifier in the background when an ephemeral event is handled
+        by the homeserver.
 
-        This will determine which appservices are
-        interested in the event, and submit them.
+        This will determine which appservices are interested in the event, and submit them.
 
-        Events will only be pushed to appservices
-        that have opted into ephemeral events
+        Events will only be pushed to appservices that have opted into ephemeral events
 
         Args:
             stream_key: The stream the event came from.
@@ -225,7 +223,7 @@ class ApplicationServicesHandler:
                 `msc2409_to_device_messages_enabled` config option is set to true.
 
                 Ephemeral events will only be pushed to appservices that have opted into
-                them.
+                them with the ephemeral registration file option enabled.
 
                 Appservices will only receive ephemeral events that fall within their
                 registered user and room namespaces.
@@ -345,7 +343,7 @@ class ApplicationServicesHandler:
                         and self.msc2409_to_device_messages_enabled
                     ):
                         # Retrieve an iterable of to-device message events, as well as the
-                        # maximum stream token we were able to retrieve.
+                        # maximum stream token of the messages we were able to retrieve.
                         events, max_stream_token = await self._handle_to_device(
                             service, new_token, users
                         )
@@ -356,6 +354,7 @@ class ApplicationServicesHandler:
 
                         # TODO: If max_stream_token != new_token, schedule another transaction immediately,
                         #  instead of waiting for another to-device to be sent?
+                        # https://github.com/matrix-org/synapse/issues/11150#issuecomment-960726449
 
                         # Persist the latest handled stream token for this appservice
                         await self.store.set_type_stream_id_for_appservice(
@@ -414,16 +413,6 @@ class ApplicationServicesHandler:
             from_key,
             new_token,
             limit=MAX_TO_DEVICE_MESSAGES_PER_AS_TRANSACTION,
-        )
-
-        logger.info(
-            "*** Users: %s, from: %s, to: %s",
-            users_appservice_is_interested_in,
-            from_key,
-            new_token,
-        )
-        logger.info(
-            "*** Got to-device message: %s", recipient_user_id_device_id_to_messages
         )
 
         # According to MSC2409, we'll need to add 'to_user_id' and 'to_device_id' fields
