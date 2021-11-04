@@ -53,5 +53,5 @@ class ExperimentalConfig(Config):
         # that have opted in to receive them. This setting optionally adds to-device messages
         # to that list.
         self.msc2409_to_device_messages_enabled: bool = experimental.get(
-            "msc2409_to_device_enabled", False
+            "msc2409_to_device_messages_enabled", False
         )

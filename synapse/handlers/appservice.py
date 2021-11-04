@@ -217,8 +217,12 @@ class ApplicationServicesHandler:
         Args:
             stream_key: The stream the event came from.
 
-                `stream_key` can be "typing_key", "receipt_key" or "presence_key". Any other
-                value for `stream_key` will cause this function to return early.
+                `stream_key` can be "typing_key", "receipt_key", "presence_key" and,
+                if enabled, "to_device_key". Any other value for `stream_key` will
+                cause this function to return early.
+
+                "to_device_key" will only be handled if the experimental
+                `msc2409_to_device_messages_enabled` config option is set to true.
 
                 Ephemeral events will only be pushed to appservices that have opted into
                 them.
