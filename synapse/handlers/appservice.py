@@ -65,6 +65,9 @@ class ApplicationServicesHandler:
         self.clock = hs.get_clock()
         self.notify_appservices = hs.config.appservice.notify_appservices
         self.event_sources = hs.get_event_sources()
+        self.msc2409_to_device_messages_enabled = (
+            hs.config.experimental.msc2409_to_device_messages_enabled
+        )
 
         self.current_max = 0
         self.is_processing = False
@@ -221,32 +224,35 @@ class ApplicationServicesHandler:
         if not self.notify_appservices:
             return
 
-        if stream_key in ("typing_key", "receipt_key", "presence_key"):
-            # Check whether there are any appservices which have registered to receive
-            # ephemeral events.
-            #
-            # Note that whether these events are actually relevant to these appservices
-            # is decided later on.
-            services = [
-                service
-                for service in self.store.get_app_services()
-                if service.supports_ephemeral
-            ]
-            if not services:
-                # Bail out early if none of the target appservices have explicitly registered
-                # to receive these ephemeral events.
-                return
+        # Ignore any unsupported streams
+        if stream_key not in (
+            "typing_key",
+            "receipt_key",
+            "presence_key",
+            "to_device_key",
+        ):
+            return
 
-        elif stream_key == "to_device_key":
-            # Appservices do not need to register explicit support for receiving device list
-            # updates.
-            #
-            # Note that whether these events are actually relevant to these appservices is
-            # decided later on.
-            services = self.store.get_app_services()
+        # Ignore to-device messages if the feature flag is not enabled
+        if (
+            stream_key == "to_device_key"
+            and not self.msc2409_to_device_messages_enabled
+        ):
+            return
 
-        else:
-            # This stream_key is not supported.
+        # Check whether there are any appservices which have registered to receive
+        # ephemeral events.
+        #
+        # Note that whether these events are actually relevant to these appservices
+        # is decided later on.
+        services = [
+            service
+            for service in self.store.get_app_services()
+            if service.supports_ephemeral
+        ]
+        if not services:
+            # Bail out early if none of the target appservices have explicitly registered
+            # to receive these ephemeral events.
             return
 
         # We only start a new background process if necessary rather than
@@ -302,7 +308,11 @@ class ApplicationServicesHandler:
                         service, "presence", new_token
                     )
 
-                elif stream_key == "to_device_key" and new_token is not None:
+                elif (
+                    stream_key == "to_device_key"
+                    and new_token is not None
+                    and self.msc2409_to_device_messages_enabled
+                ):
                     # Retrieve an iterable of to-device message events, as well as the
                     # maximum stream token we were able to retrieve.
                     events, max_stream_token = await self._handle_to_device(
