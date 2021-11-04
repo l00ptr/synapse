@@ -27,6 +27,9 @@ class ExperimentalConfig(Config):
         # Whether to enable experimental MSC1849 (aka relations) support
         self.msc1849_enabled = config.get("experimental_msc1849_support_enabled", True)
 
+        # MSC3440 (thread relation)
+        self.msc3440_enabled: bool = experimental.get("msc3440_enabled", False)
+
         # MSC3026 (busy presence state)
         self.msc3026_enabled: bool = experimental.get("msc3026_enabled", False)
 
@@ -44,3 +47,11 @@ class ExperimentalConfig(Config):
 
         # MSC3266 (room summary api)
         self.msc3266_enabled: bool = experimental.get("msc3266_enabled", False)
+
+        # MSC2409 (this setting only relates to optionally sending to-device messages).
+        # Presence, typing and read receipt EDUs are already sent to application services
+        # that have opted in to receive them. This setting optionally adds to-device messages
+        # to that list.
+        self.msc2409_to_device_messages_enabled: bool = experimental.get(
+            "msc2409_to_device_enabled", False
+        )
