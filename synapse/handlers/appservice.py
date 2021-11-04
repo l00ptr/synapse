@@ -449,8 +449,6 @@ class ApplicationServicesHandler:
                     }
                 )
 
-        logger.info("*** Ended up with messages: %s", message_payload)
-
         return message_payload, max_stream_token
 
     async def _handle_typing(

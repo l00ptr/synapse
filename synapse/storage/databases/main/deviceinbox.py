@@ -157,7 +157,6 @@ class DeviceInboxWorkerStore(SQLBaseStore):
             ):
                 break
         else:
-            logger.info("*** Bailing out")
             return {}, to_stream_token
 
         def get_new_messages_txn(txn):
@@ -178,8 +177,6 @@ class DeviceInboxWorkerStore(SQLBaseStore):
                 " LIMIT ?"
             ) % many_clause_sql
 
-            logger.info("*** %s\n\n%s", many_clause_sql, many_clause_args)
-            logger.info("*** %s", sql)
             txn.execute(
                 sql, (*many_clause_args, from_stream_token, to_stream_token, limit)
             )
